@@ -1,7 +1,7 @@
-// Pattadon Pimai 6581007
-// Chayuthwarat Tansthitaya 6581125
-// Siriwat Ittisompiboon 6581098
-// Supakorn Panyadee 6581117
+// Pattadon Pimai               6581007
+// Chayuthwarat Tansthitaya     6581125
+// Siriwat Ittisompiboon        6581098
+// Supakorn Panyadee            6581117
 //
 
 #include <fcntl.h>
