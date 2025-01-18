@@ -2,7 +2,7 @@
 // Chayuthwarat Tansthitaya     6581125
 // Siriwat Ittisompiboon        6581098
 // Supakorn Panyadee            6581117
-//
+// Sittipat Suthin              6581126
 
 #include <fcntl.h>
 #include <sys/stat.h>
