@@ -11,5 +11,8 @@ int main(void)
     while ((c = getc(in)) != EOF)
         putc(c, out);
 
+    fclose(in);
+    fclose(out);
+    
     return 0;
 }
