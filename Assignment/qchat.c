@@ -1,106 +1,90 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <asm-generic/fcntl.h>
+#include<stdio.h>
+#include<unistd.h>
+#include<stdlib.h>
+#include<string.h>
+#include<mqueue.h>
+#include<sys/types.h>
+#include<sys/ipc.h>
+#include<sys/msg.h>
 
-struct a_msg
-{
-	long int msg_type;
-	char data[BUFSIZ];
+struct msg{
+  long int msg_type;
+  char msg_data[BUFSIZ];
 };
 
-
-#define FIFO_1 "./fifo1to2"
-#define FIFO_2 "./fifo2to1"
-#define MAX_RBUF 80
-
-int FIFO_FD1, FIFO_FD2;
-int main(int argc, char *argv[])
-{
-    int child, nbytes;
-    char rbuf[MAX_RBUF] = "";
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <[1, 2]>\n", *argv);
+int main(int argc, char *argv[]){
+  int user = atoi(argv[1]);
+  int studentid = atoi(argv[2]);
+  char buffer[BUFSIZ];
+  struct msg amsg;
+  int msgID = msgget((key_t) studentid,0666|IPC_CREAT);
+  
+  
+  if(user==1){
+    long int rcvtype = 2;
+    pid_t pid;
+    pid = fork();
+    
+    switch(pid){
+      case -1:
+        perror("Forking failed");
         exit(EXIT_FAILURE);
-    }
-    if (access(FIFO_1, F_OK) == -1)
-    {
-        FIFO_FD1 = mkfifo(FIFO_1, 0777);
-        if (FIFO_FD1)
-        {
-            fprintf(stderr, "Could not create fifo %s\n", FIFO_1);
+      case 0: 
+        while(strncmp(amsg.msg_data,"end chat",8)){
+          if(msgrcv(msgID,(void*)&amsg,BUFSIZ,rcvtype,0)==-1){
+            fprintf(stderr,"msgrcv failed\n");
             exit(EXIT_FAILURE);
+          }
+          if(strncmp(amsg.msg_data,"end chat",8)!=0)printf(">> %s",amsg.msg_data);
         }
-    }
-    if (access(FIFO_2, F_OK) == -1)
-    {
-        FIFO_FD2 = mkfifo(FIFO_2, 0777);
-        if (FIFO_FD2)
-        {
-            fprintf(stderr, "Could not create fifo %s\n", FIFO_2);
+        break;
+        
+      default: 
+        while(strncmp(amsg.msg_data,"end chat",8)){
+          
+          fgets(buffer, BUFSIZ, stdin);
+          amsg.msg_type = 1;
+          strcpy(amsg.msg_data, buffer);
+          if(msgsnd(msgID, (void*) &amsg, BUFSIZ, 0)==-1){
+            perror("msgsnd failed");
             exit(EXIT_FAILURE);
+          }
         }
+        break;
     }
-    ////////////////////////////////////////////////////
-    FIFO_FD1 = mq_open(FIFO_1, O_WRONLY);
-    FIFO_FD2 = mq_open(FIFO_2, O_RDONLY);
-    argv++;
-    if (strcmp(*argv, "1") == 0)
-    {
-        child = fork();
-        switch (child)
-        {
-        case -1:
-            perror("Forking failed");
+    
+  }
+  else if(user==2){
+    long int rcvtype = 1;
+    pid_t pid;
+    pid = fork();
+    
+    switch(pid){
+      case -1:
+        perror("Forking failed");
+        exit(EXIT_FAILURE);
+      case 0: 
+        while(strncmp(amsg.msg_data,"end chat",8)){
+          if(msgrcv(msgID,(void*)&amsg,BUFSIZ,rcvtype,0)==-1){
+            fprintf(stderr,"msgrcv failed\n");
             exit(EXIT_FAILURE);
-        case 0:
-            while (strncmp(rbuf, "end chat", 8))
-            {
-                //////////////// Put your code here ////////////////
-                
-            }
-            break;
-
-        default:
-            while (strncmp(rbuf, "end chat", 8))
-
-            {
-                //////////////// Put your code here ////////////////
-                read(0, ...);
-                write(FIFO_FD1, ...);
-            }
+          }
+          if(strncmp(amsg.msg_data,"end chat",8)!=0) printf(">> %s",amsg.msg_data);
         }
-    }
-    else if (strcmp(*argv, "2") == 0)
-    {
-        child = fork();
-        switch (child)
-        {
-        case -1:
-            perror("Forking failed");
+        break;
+      default:
+        while (strncmp(amsg.msg_data, "end chat", 8)) {
+          fgets(buffer, BUFSIZ, stdin);
+          amsg.msg_type = 2;
+          strcpy(amsg.msg_data, buffer);
+          if (msgsnd(msgID, (void *)&amsg, BUFSIZ, 0) == -1) {
+            perror("msgsnd failed");
             exit(EXIT_FAILURE);
-        case 0:
-            while (strncmp(rbuf, "end chat", 8))
-            {
-                //////////////// Put your code here ////////////////
-            }
-            break;
-        default:
-            while (strncmp(rbuf, "end chat", 8))
-            {
-                //////////////// Put your code here ////////////////
-            }
+          }
         }
+        break;
     }
-    ////////////////////////////////////////////////////
-    if (FIFO_FD1 != -1)
-        close(FIFO_FD1);
-    if (FIFO_FD2 != -1)
-        close(FIFO_FD2);
-    exit(EXIT_SUCCESS);
+    
+  }
+  
 }
